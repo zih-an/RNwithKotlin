@@ -182,4 +182,6 @@ export default Alt;
 
 ### 4 result
 
+`npx react-native run-android`
+
 <img src="result.jpg" width="400" />
