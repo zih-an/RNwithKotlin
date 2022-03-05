@@ -2,12 +2,13 @@
 
 buildscript {
     //== add 1. ==
-    ext.kotlin_version = "1.4.32"
     ext {
+        kotlin_version = "1.5.21"
+        RNNKotlinVersion = "1.3.61"
         buildToolsVersion = "30.0.2"
         minSdkVersion = 21
-        compileSdkVersion = 30
-        targetSdkVersion = 30
+        compileSdkVersion = 31
+        targetSdkVersion = 31
         ndkVersion = "21.4.7075529"
     }
     repositories {
@@ -15,6 +16,8 @@ buildscript {
         mavenCentral()
         //== add 2. ==
         maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
+        jcenter()
+        mavenLocal()
     }
     dependencies {
         classpath("com.android.tools.build:gradle:4.2.2")
@@ -35,6 +38,10 @@ allprojects {
             // Android JSC is installed from npm
             url("$rootDir/../node_modules/jsc-android/dist")
         }
+        maven {
+            name 'ossrh-snapshot'
+            url 'https://oss.sonatype.org/content/repositories/snapshots'
+        }
         mavenCentral {
             // We don't want to fetch react-native from Maven Central as there are
             // older versions over there.
@@ -44,7 +51,9 @@ allprojects {
         }
         google()
         //== add 4. ==
-        jcenter()
         maven { url 'https://www.jitpack.io' }
+        jcenter()
+        mavenLocal()
+        mavenCentral()
     }
 }

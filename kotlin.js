@@ -1,4 +1,5 @@
 import {NativeModules} from 'react-native';
-const {Alt} = NativeModules;
-console.log('Alt: ', Alt);
-export default Alt;
+const {InterfaceMovenet} = NativeModules;
+console.log('hi there');
+console.log('InterfaceMovenet: ', InterfaceMovenet);
+export default InterfaceMovenet;

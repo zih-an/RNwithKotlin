@@ -80,7 +80,7 @@ import com.android.build.OutputFile
  */
 
 project.ext.react = [
-    enableHermes: false,  // clean and rebuild if changing
+    enableHermes: true,  // clean and rebuild if changing
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
@@ -172,7 +172,6 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
-
     // applicationVariants are e.g. debug, release
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
@@ -193,7 +192,17 @@ android {
     buildFeatures {
         viewBinding true
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
 }
+
+apply from:"download.gradle"
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
@@ -202,8 +211,27 @@ dependencies {
 
 //============== add here =======================
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
+//    implementation 'com.google.mlkit:pose-detection:18.0.0-beta2'
+//    implementation 'com.google.mlkit:pose-detection-accurate:18.0.0-beta2'
+    implementation "androidx.camera:camera-core:1.1.0-alpha06"
+    implementation 'androidx.core:core-ktx:1.5.0'
+    implementation 'androidx.core:core:1.5.0'
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation "androidx.activity:activity-ktx:1.2.3"
+    implementation 'androidx.fragment:fragment-ktx:1.3.5'
+    implementation 'org.tensorflow:tensorflow-lite:2.5.0'
+    implementation 'org.tensorflow:tensorflow-lite-gpu:2.5.0'
+    implementation 'org.tensorflow:tensorflow-lite-support:0.3.0'
+    implementation 'org.mechdancer:linearalgebra:0.2.7-dev-2'
+    implementation 'androidx.annotation:annotation:1.0.2'
+    implementation group: 'org.jblas', name: 'jblas', version: '1.2.4'
+    implementation group: 'gov.nist.math', name: 'jama', version: '1.0.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    androidTestImplementation "com.google.truth:truth:1.1.3"
 
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
         exclude group:'com.facebook.fbjni'
@@ -233,5 +261,4 @@ task copyDownloadableDepsToLibs(type: Copy) {
     from configurations.implementation
     into 'libs'
 }
-
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
