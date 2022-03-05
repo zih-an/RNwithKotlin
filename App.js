@@ -1,7 +1,7 @@
 import 'react-native-reanimated';
 import React, {useEffect, useState} from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import InterfaceMovenet from './kotlin';
+// import InterfaceMovenet from './kotlin';
 import {
   useCameraDevices,
   Camera,
@@ -9,6 +9,11 @@ import {
 } from 'react-native-vision-camera';
 
 console.log('in app.js');
+
+export function MoveNet(frame) {
+  'worklet';
+  return __MoveNet(frame);
+}
 
 export default function App() {
   const devices = useCameraDevices('wide-angle-camera');
@@ -18,23 +23,18 @@ export default function App() {
   const [cameraPermission, setCameraPermission] = useState();
   const [microphonePermission, setMicrophonePermission] = useState();
 
-  // const frameProcessor = useFrameProcessor(frame => {
-  //   'worklet';
-  //   async function processFrame() {
-  //     console.log('[-----------FRAME-----------]');
-  //     let result = await InterfaceMovenet.detect(frame);
-  //     console.log('result: ', result);
-  //   }
-  //   processFrame();
-  // }, []);
+  const frameProcessor = useFrameProcessor(frame => {
+    'worklet';
+    console.log('[-----------FRAME-----------]');
+    let result = MoveNet(frame);
+    console.log('[frame result]: ', result);
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
       const newCameraPermission = await Camera.requestCameraPermission();
       const newMicrophonePermission =
         await Camera.requestMicrophonePermission();
-      const msg = await InterfaceMovenet.create();
-      console.log('[create net]: ', msg);
       Camera.getCameraPermissionStatus().then(setCameraPermission);
       Camera.getMicrophonePermissionStatus().then(setMicrophonePermission);
     }
@@ -56,8 +56,8 @@ export default function App() {
         style={styles.cameraStyle}
         device={frontDevice}
         isActive={true}
-        // frameProcessor={frameProcessor}
-        // frameProcessorFps={0.1}
+        frameProcessor={frameProcessor}
+        frameProcessorFps={1}
       />
       <Text style={styles.box}>Hi</Text>
     </>

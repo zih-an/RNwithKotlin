@@ -1,32 +1,33 @@
 package com.rnwithkotlin
-
+import android.util.Log
+import androidx.camera.core.ImageProxy
+import com.mrousavy.camera.frameprocessor.FrameProcessorPlugin
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.*
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.Promise;
 import com.rnwithkotlin.data.Device
-import com.rnwithkotlin.data.Person
-
+import com.rnwithkotlin.utils.*
 import android.media.Image
-import android.util.Log
 import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageProxy
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
 
-class InterfaceMovenet(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
-    private final var TAG = "InterfaceMovenet";
+class MovenetFrameProcessorPlugin(reactContext: ReactApplicationContext): FrameProcessorPlugin("MoveNet") {
     private lateinit var net: MoveNet;
     private var context:Context = reactContext;
-
-    override fun getName(): String {
-        return "InterfaceMovenet"
+    init {
+        Log.d("TAG", "in create")
+        net = MoveNet.create(context, Device.CPU, ModelType.Thunder);
+        Log.d("TAG", "create finish")
     }
+
+    override fun callback(image: ImageProxy, params: Array<Any>): Any? {
+        // code goes here
+        return estimatePoses(image);
+    }
+
 
     @ExperimentalGetImage
     private fun toBitmap(imageProxy: ImageProxy): Bitmap {
@@ -50,36 +51,27 @@ class InterfaceMovenet(reactContext: ReactApplicationContext) : ReactContextBase
         return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
     }
 
-    @ReactMethod
-    fun create(promise: Promise) {
-        net = MoveNet.create(context, Device.CPU, ModelType.Thunder);
-        promise.resolve("in movenet create")
-    }
 
     @SuppressLint("UnsafeOptInUsageError")
-    @ReactMethod
-    fun estimatePoses(frame: ImageProxy, promise: Promise): List<Person>? {
-        Log.d(TAG, "pose 1")
+    private fun estimatePoses(frame: ImageProxy): Double {
         if (net == null) {
-            Log.d(TAG, "pose 2")
-            promise.reject("Net is NULL", "a");
-            return null;
+            return -1.0;
         }
-        Log.d(TAG, "pose 3")
         val bitmap: Bitmap = toBitmap(frame)
-        Log.d(TAG, "pose 4")
-        val tmp:Int = net.estimatePoses(bitmap).count()
-        Log.d(TAG, "pose 5")
-        promise.resolve(tmp)
-        Log.d(TAG, "pose 6")
-        return net.estimatePoses(bitmap)
+        val ans = net.estimatePoses(bitmap)
+        val tmp: Int = ans.count()
+        val matrixList = DataTypeTransfor().listPerson2ListMatrix_Jama(ans)
+        for (i in 0..tmp - 1) {
+            AffineTransprocess().printJama(matrixList.get(i))
+        }
+        return matrixList.get(0).get(0, 0);
     }
 
-    @ReactMethod
-    fun shutdown(promise: Promise) {
-        if (net == null) {
-            promise.reject("Net is NULL", "a");
-        }
-        net.close()
-    }
+//    fun shutdown() {
+//        if (net == null) {
+//            return;
+//        }
+//        net.close()
+//    }
 }
+
