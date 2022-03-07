@@ -1,15 +1,17 @@
 package com.rnwithkotlin
-import android.util.Log
-import androidx.camera.core.ImageProxy
-import com.mrousavy.camera.frameprocessor.FrameProcessorPlugin
+
+import Jama.Matrix
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
-import com.facebook.react.bridge.ReactApplicationContext
-import com.rnwithkotlin.data.Device
-import com.rnwithkotlin.utils.*
 import android.media.Image
 import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageProxy
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.WritableNativeArray
+import com.mrousavy.camera.frameprocessor.FrameProcessorPlugin
+import com.rnwithkotlin.data.Device
+import com.rnwithkotlin.utils.*
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
@@ -18,16 +20,16 @@ class MovenetFrameProcessorPlugin(reactContext: ReactApplicationContext): FrameP
     private lateinit var net: MoveNet;
     private var context:Context = reactContext;
     init {
-        Log.d("TAG", "in create")
         net = MoveNet.create(context, Device.CPU, ModelType.Thunder);
-        Log.d("TAG", "create finish")
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     override fun callback(image: ImageProxy, params: Array<Any>): Any? {
         // code goes here
-        return estimatePoses(image);
+        val bitmap: Bitmap = toBitmap(image);
+        val result: List<Matrix> = estimatePoses(bitmap);
+        return ListMatrix2WritableArray(result);
     }
-
 
     @ExperimentalGetImage
     private fun toBitmap(imageProxy: ImageProxy): Bitmap {
@@ -51,21 +53,48 @@ class MovenetFrameProcessorPlugin(reactContext: ReactApplicationContext): FrameP
         return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
     }
 
-
-    @SuppressLint("UnsafeOptInUsageError")
-    private fun estimatePoses(frame: ImageProxy): Double {
-        if (net == null) {
-            return -1.0;
-        }
-        val bitmap: Bitmap = toBitmap(frame)
+    private fun estimatePoses(bitmap: Bitmap): List<Matrix> {
         val ans = net.estimatePoses(bitmap)
-        val tmp: Int = ans.count()
-        val matrixList = DataTypeTransfor().listPerson2ListMatrix_Jama(ans)
-        for (i in 0..tmp - 1) {
-            AffineTransprocess().printJama(matrixList.get(i))
-        }
-        return matrixList.get(0).get(0, 0);
+        return DataTypeTransfor().listPerson2ListMatrix_Jama(ans)
     }
+
+    private fun ListMatrix2WritableArray(obj:List<Matrix>):WritableNativeArray {
+        var obj2:WritableNativeArray = WritableNativeArray()
+        obj.forEach{
+            var temp:WritableNativeArray = WritableNativeArray()
+            val rowNum=it.rowDimension
+            val colNum=it.columnDimension
+            for(i in 0..rowNum-1)
+            {
+                var ttemp:WritableNativeArray = WritableNativeArray()
+                for(j in 0..colNum-1)
+                {
+                    ttemp.pushDouble(it.get(i,j))
+                }
+                temp.pushArray(ttemp)
+            }
+            obj2.pushArray(temp)
+        }
+        return obj2
+    }
+
+    // this function will save file
+//    private fun saveImage(bitmap:Bitmap) {
+//        var fos: OutputStream;
+//        try {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                val resolver:ContentResolver = context.getContentResolver();
+//                val contentValues:ContentValues =  ContentValues();
+//                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "Image" + ".jpg");
+//                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpg");
+//                val imageUri: Uri? = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+//                fos = Objects.requireNonNull(imageUri)?.let { resolver.openOutputStream(it) }!!;
+//                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos); Objects.requireNonNull(fos);
+//            }
+//        } catch (e:Exception) {
+//            Log.d("error",e.toString());
+//        }
+//    }
 
 //    fun shutdown() {
 //        if (net == null) {
@@ -74,4 +103,3 @@ class MovenetFrameProcessorPlugin(reactContext: ReactApplicationContext): FrameP
 //        net.close()
 //    }
 }
-
